@@ -187,19 +187,88 @@ def _resolve_gallium_va_args(mesa_dir: Path, tc: ToolchainConfig) -> tuple[list[
     return ["-Dgallium-va=disabled"], "disabled (no preinstalled libva-win32 on Windows)"
 
 
-def _filter_supported_meson_args(mesa_dir: Path, args: list[str]) -> list[str]:
-    """Drop MediaFoundation flags only if building a historic branch lacking those options."""
+_MESON_OPTION_NAME_RE = re.compile(r"option\s*\(\s*['\"]([A-Za-z0-9_.-]+)['\"]")
+
+# Built-in Meson options (not declared in Mesa's meson.options).
+_MESON_BUILTIN_OPTION_PREFIXES = (
+    "b_",
+    "c_",
+    "cpp_",
+    "rust_",
+    "build.",
+    "pkg_config_",
+    "cmake_",
+)
+_MESON_BUILTIN_OPTIONS = frozenset(
+    {
+        "auto_features",
+        "backend",
+        "buildtype",
+        "debug",
+        "default_library",
+        "errorlogs",
+        "force_fallback_for",
+        "install_umask",
+        "layout",
+        "optimization",
+        "prefer_static",
+        "prefix",
+        "stdsplit",
+        "strip",
+        "unity",
+        "unity_size",
+        "warning_level",
+        "werror",
+        "wrap_mode",
+        "allow_fallback_for",
+    }
+)
+
+
+def parse_meson_declared_options(mesa_dir: Path) -> set[str] | None:
+    """Parse all project option names declared in Mesa's meson.options / meson_options.txt."""
     opts_file = mesa_dir / "meson.options"
     if not opts_file.is_file():
         opts_file = mesa_dir / "meson_options.txt"
     if not opts_file.is_file():
-        return args
+        return None
     opts_text = opts_file.read_text(encoding="utf-8", errors="replace")
+    return set(_MESON_OPTION_NAME_RE.findall(opts_text))
+
+
+def _filter_supported_meson_args(
+    mesa_dir: Path,
+    args: list[str],
+    log_fh: Any | None = None,
+) -> list[str]:
+    """Automatically drop project -D<opt>=... flags absent from this Mesa branch's meson.options.
+
+    Ensures historic Mesa tags and future major Mesa versions that add/rename/remove
+    options keep configuring cleanly without manual workflow edits.
+    """
+    declared = parse_meson_declared_options(mesa_dir)
+    if not declared:
+        return args
+
     filtered: list[str] = []
     for arg in args:
-        if "mediafoundation" in arg and "gallium-mediafoundation" not in opts_text:
-            continue
-        filtered.append(arg)
+        if arg.startswith("-D") and "=" in arg:
+            opt_name = arg[2:].split("=", 1)[0].strip()
+            # Subproject options (-Dsubproj:opt=val) and built-in Meson options always pass through.
+            if (
+                ":" in opt_name
+                or opt_name in _MESON_BUILTIN_OPTIONS
+                or opt_name.startswith(_MESON_BUILTIN_OPTION_PREFIXES)
+                or opt_name in declared
+            ):
+                filtered.append(arg)
+            else:
+                if log_fh is not None:
+                    log_fh.write(
+                        f"[info] Skipping unsupported Mesa option for this branch: {arg}\n"
+                    )
+        else:
+            filtered.append(arg)
     return filtered
 
 
@@ -391,7 +460,7 @@ def run_build(
             log_fh.write(f"[info] gallium-va: {va_note}\n")
 
             meson_args = list(target.meson_common_args) + list(tc.meson_args) + va_args
-            meson_args = _filter_supported_meson_args(mesa_dir, meson_args)
+            meson_args = _filter_supported_meson_args(mesa_dir, meson_args, log_fh=log_fh)
 
             env = os.environ.copy()
             env["PYTHONUTF8"] = "1"

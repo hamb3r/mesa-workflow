@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mesa_canary.build_d3d12 import verify_subproject_resolution
+from mesa_canary.build_d3d12 import _filter_supported_meson_args, verify_subproject_resolution
 from mesa_canary.config import load_all_targets
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -73,3 +73,31 @@ def test_verify_subproject_resolution_catches_version_mismatch(tmp_path: Path) -
     assert ok is False
     assert ver == "1.619.1"
     assert "expected '1.620.1'" in msg
+
+
+def test_filter_supported_meson_args_drops_removed_and_keeps_builtins(tmp_path: Path) -> None:
+    mesa_dir = tmp_path / "mesa"
+    mesa_dir.mkdir()
+    (mesa_dir / "meson.options").write_text(
+        "option('gallium-drivers', type : 'array')\n"
+        "option('llvm', type : 'feature')\n",
+        encoding="utf-8",
+    )
+    args = [
+        "--buildtype=release",
+        "-Db_ndebug=false",
+        "-Db_vscrt=mt",
+        "-Dgallium-drivers=d3d12",
+        "-Dllvm=disabled",
+        "-Dremoved-in-mesa-28=disabled",
+        "-Dwayland-protocols:tests=false",
+    ]
+    filtered = _filter_supported_meson_args(mesa_dir, args)
+    assert filtered == [
+        "--buildtype=release",
+        "-Db_ndebug=false",
+        "-Db_vscrt=mt",
+        "-Dgallium-drivers=d3d12",
+        "-Dllvm=disabled",
+        "-Dwayland-protocols:tests=false",
+    ]
