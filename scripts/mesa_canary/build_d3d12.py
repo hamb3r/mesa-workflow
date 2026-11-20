@@ -224,10 +224,10 @@ def verify_subproject_resolution(
     log_text = meson_log.read_text(encoding="utf-8", errors="replace")
     sp_name = target.subproject.name
 
-    # Check if lowercase system pkg-config/cmake dependency hijacked lookup.
+    # Check if a system pkg-config/cmake dependency hijacked lookup (without '(overridden)').
     for dep_name in target.subproject.meson_dependency_names:
         hijack_re = re.compile(
-            rf"Run-time dependency {re.escape(dep_name)} found: YES\b",
+            rf"Run-time dependency {re.escape(dep_name)}(?:\s+for\s+\w+\s+machine)?\s+found:\s+YES\b(?!.*\(overridden\))",
             re.IGNORECASE,
         )
         if hijack_re.search(log_text):
@@ -237,28 +237,46 @@ def verify_subproject_resolution(
                 f"System dependency '{dep_name}' hijacked lookup instead of subproject '{sp_name}'!",
             )
 
-    # Confirm subproject itself was configured and provided the dependency.
-    subproj_ver_re = re.compile(
-        rf"Dependency {re.escape(sp_name)} from subproject subprojects/{re.escape(subproj_dir_name)} "
-        rf"found: YES\s+([^\r\n]+)",
-        re.IGNORECASE,
+    # Confirm subproject itself executed and provided the overridden/fallback dependency.
+    resolved_ver: str | None = None
+    patterns = (
+        # Meson >= 1.x with meson.override_dependency(...)
+        re.compile(
+            rf"Dependency {re.escape(sp_name)}(?:\s+for\s+\w+\s+machine)?\s+found:\s+YES\s+([^\s\r\n(]+)\s+\(overridden\)",
+            re.IGNORECASE,
+        ),
+        # Meson fallback dependency without override_dependency
+        re.compile(
+            rf"Dependency {re.escape(sp_name)}(?:\s+for\s+\w+\s+machine)?\s+from subproject subprojects/{re.escape(subproj_dir_name)}\s+found:\s+YES\s+([^\s\r\n(]+)",
+            re.IGNORECASE,
+        ),
+        # Subproject project version header emitted during subproject execution
+        re.compile(
+            rf"{re.escape(sp_name)}\|\s*Project version:\s*([^\s\r\n]+)",
+            re.IGNORECASE,
+        ),
     )
-    match = subproj_ver_re.search(log_text)
-    if not match:
-        # Older/alternative Meson log wording
-        alt_re = re.compile(
-            rf"Subproject {re.escape(sp_name)} is buildable: YES",
+    for pat in patterns:
+        m = pat.search(log_text)
+        if m:
+            resolved_ver = m.group(1).strip()
+            break
+
+    subproj_executed = bool(
+        re.search(
+            rf"(?:Subproject {re.escape(sp_name)} (?:finished|is buildable:\s*YES)|Executing subproject {re.escape(sp_name)}\b)",
+            log_text,
             re.IGNORECASE,
         )
-        if not alt_re.search(log_text):
-            return (
-                False,
-                None,
-                f"Could not verify subproject '{sp_name}' (subprojects/{subproj_dir_name}) in meson-log.txt",
-            )
+    )
+    if not subproj_executed and resolved_ver is None:
+        return (
+            False,
+            None,
+            f"Could not verify subproject '{sp_name}' (subprojects/{subproj_dir_name}) in meson-log.txt",
+        )
+    if resolved_ver is None:
         resolved_ver = expected_version
-    else:
-        resolved_ver = match.group(1).strip()
 
     if expected_version and resolved_ver and resolved_ver != expected_version:
         return (

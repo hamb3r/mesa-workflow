@@ -26,6 +26,25 @@ def test_verify_subproject_resolution_success(tmp_path: Path) -> None:
     assert ver == "1.620.1"
 
 
+def test_verify_subproject_resolution_modern_meson_overridden_wording(tmp_path: Path) -> None:
+    target = load_all_targets(REPO_ROOT)["directx-headers"]
+    build_dir = tmp_path / "build"
+    (build_dir / "meson-logs").mkdir(parents=True)
+    (build_dir / "subprojects" / "DirectX-Headers-1.0").mkdir(parents=True)
+    (build_dir / "meson-logs" / "meson-log.txt").write_text(
+        "Executing subproject DirectX-Headers for machine: host\n"
+        "DirectX-Headers| Project name: DirectX-Headers\n"
+        "DirectX-Headers| Project version: 1.620.1\n"
+        "DirectX-Headers| Subproject DirectX-Headers finished.\n"
+        "Dependency directx-headers for host machine from subproject subprojects/DirectX-Headers-1.0 found: NO\n"
+        "Dependency DirectX-Headers for host machine found: YES 1.620.1 (overridden)\n",
+        encoding="utf-8",
+    )
+    ok, ver, _ = verify_subproject_resolution(build_dir, target, "DirectX-Headers-1.0", "1.620.1")
+    assert ok is True
+    assert ver == "1.620.1"
+
+
 def test_verify_subproject_resolution_catches_system_hijack(tmp_path: Path) -> None:
     target = load_all_targets(REPO_ROOT)["directx-headers"]
     build_dir = tmp_path / "build"
