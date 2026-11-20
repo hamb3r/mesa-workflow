@@ -44,6 +44,7 @@ subproject:
 meson:
   common_args:
     - "--buildtype=release"
+    - "-Db_ndebug=false"
     - "-Dgallium-drivers=d3d12"
     - "-Dgallium-d3d12-graphics=enabled"
     - "-Dgallium-d3d12-video=enabled"

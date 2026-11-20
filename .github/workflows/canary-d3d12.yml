@@ -228,6 +228,32 @@ jobs:
         if: matrix.os == 'linux'
         run: python -m pip install --disable-pip-version-check --upgrade meson mako pyyaml packaging
 
+      - name: Cache wayland-scanner 1.25.0 (Linux)
+        if: matrix.os == 'linux'
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/wayland-tools
+          key: wayland-scanner-1.25.0-v1-${{ runner.os }}
+
+      - name: Build wayland-scanner 1.25.0 (Linux, matches Mesa CI)
+        if: matrix.os == 'linux'
+        run: |
+          WT="${{ runner.temp }}/wayland-tools"
+          if [ ! -x "$WT/bin/wayland-scanner" ]; then
+            tmp=$(mktemp -d)
+            git clone --depth=1 --branch 1.25.0 https://gitlab.freedesktop.org/wayland/wayland.git "$tmp/wayland"
+            meson setup "$tmp/build" "$tmp/wayland" \
+              --prefix="$WT" \
+              -Dtests=false -Ddocumentation=false -Ddtd_validation=false \
+              -Dlibraries=false -Dscanner=true
+            ninja -C "$tmp/build" install
+            rm -rf "$tmp"
+          fi
+          echo "$WT/bin" >> "$GITHUB_PATH"
+          pc_dirs=$(find "$WT" -type d -name pkgconfig | paste -sd: -)
+          echo "PKG_CONFIG_PATH=${pc_dirs}${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+          "$WT/bin/wayland-scanner" --version
+
       # ------------------------------------------------------------------
       # Shared compilation & Meson wrap caches (all variants)
       # ------------------------------------------------------------------

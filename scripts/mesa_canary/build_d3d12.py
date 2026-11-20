@@ -161,21 +161,18 @@ def _write_native_file(
 
 
 def _resolve_gallium_va_args(mesa_dir: Path, tc: ToolchainConfig) -> tuple[list[str], str]:
-    """Determine gallium-va Meson args cleanly across Mesa 26.2 vs 26.3+/main."""
+    """Determine gallium-va Meson args cleanly on Windows vs Linux.
+
+    Note: upstream intel/libva subproject tarball does not mirror win32/va_win32.h
+    into a flat va/ directory in-tree (Mesa Windows CI installs libva separately),
+    so on Windows we only enable gallium-va when pkg-config finds an installed libva-win32.
+    All d3d12_video_*.cpp sources still compile into libd3d12/libgallium_wgl regardless.
+    """
+    _ = mesa_dir
     if tc.gallium_va == "enabled":
         return [], "configured enabled"
     if tc.gallium_va == "disabled":
         return ["-Dgallium-va=disabled"], "configured disabled"
-
-    # auto_windows: enable if subprojects/libva.wrap provides libva-win32 OR pkg-config has it.
-    libva_wrap = mesa_dir / "subprojects" / "libva.wrap"
-    if libva_wrap.is_file():
-        wrap_text = libva_wrap.read_text(encoding="utf-8", errors="replace")
-        if "libva-win32" in wrap_text:
-            return [
-                "-Dgallium-va=enabled",
-                "-Dallow-fallback-for=libva",
-            ], "enabled via subprojects/libva.wrap (libva-win32)"
 
     pkg_cfg = shutil.which("pkg-config") or shutil.which("pkgconf")
     if pkg_cfg:
@@ -187,7 +184,7 @@ def _resolve_gallium_va_args(mesa_dir: Path, tc: ToolchainConfig) -> tuple[list[
         if probe.returncode == 0:
             return ["-Dgallium-va=enabled"], "enabled via system pkg-config libva-win32"
 
-    return ["-Dgallium-va=disabled"], "disabled (Mesa branch libva.wrap lacks libva-win32)"
+    return ["-Dgallium-va=disabled"], "disabled (no preinstalled libva-win32 on Windows)"
 
 
 def _filter_supported_meson_args(mesa_dir: Path, args: list[str]) -> list[str]:
