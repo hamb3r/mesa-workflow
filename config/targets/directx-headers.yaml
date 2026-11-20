@@ -83,8 +83,13 @@ toolchains:
       - "-Dgallium-mediafoundation-test=false"
 
   # 2. Windows clang-cl (LLVM clang-cl + MSVC ABI / Windows SDK + tracewpp + Media Foundation + VA-API)
+  # Temporarily disabled: upstream Mesa src/util/u_atomic.h routes clang-cl into
+  # PIPE_ATOMIC_MSVC_INTRINSIC and calls MSVC-only lowercase _interlockedexchange64/_interlockedadd
+  # intrinsics (broken since commit 96e7d1cf0c54 / !18795), failing before reaching DirectX-Headers.
+  # Re-enable (enabled: true) once upstream Mesa fixes src/util/u_atomic.h.
   - id: "clang-cl"
     label: "Win clang-cl"
+    enabled: false
     os: "windows"
     kind: "clang-cl"
     c_compiler: "clang-cl"

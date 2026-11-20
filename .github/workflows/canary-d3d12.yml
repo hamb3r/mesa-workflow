@@ -363,14 +363,16 @@ jobs:
       - name: Reflect build status (Linux)
         if: always() && matrix.os == 'linux'
         run: |
-          python3 -c '
+          python3 - <<'PY'
           import json, sys
           with open("_out/result.json", encoding="utf-8") as fh:
               r = json.load(fh)
           if r.get("status") != "PASS":
-              print(f"::error::Canary build FAILED ({r.get(\"error_stage\")}): {r.get(\"error_summary\")}")
+              stage = r.get("error_stage")
+              summary = r.get("error_summary")
+              print(f"::error::Canary build FAILED ({stage}): {summary}")
               sys.exit(1)
-          '
+          PY
 
   # Consolidated summary + optional Stage 2 backport diagnosis for manual smoke-test runs
   manual-summary:

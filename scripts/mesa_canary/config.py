@@ -101,6 +101,7 @@ class ToolchainConfig:
     kind: str  # "msvc" | "clang-cl" | "msys2" | "linux"
     c_compiler: str
     cpp_compiler: str
+    enabled: bool = True
     use_sccache: bool = True
     needs_tracewpp: bool = False
     gallium_va: str = "auto_windows"  # "enabled" | "disabled" | "auto_windows"
@@ -118,13 +119,19 @@ class TargetConfig:
     upstream: UpstreamConfig
     subproject: SubprojectConfig
     meson_common_args: tuple[str, ...]
-    toolchains: tuple[ToolchainConfig, ...]
+    all_toolchains: tuple[ToolchainConfig, ...]
+
+    @property
+    def toolchains(self) -> tuple[ToolchainConfig, ...]:
+        """Return enabled toolchains used for scheduled runs, README tables, and 'all'."""
+        return tuple(tc for tc in self.all_toolchains if tc.enabled)
 
     def get_toolchain(self, toolchain_id: str) -> ToolchainConfig:
-        for tc in self.toolchains:
+        """Look up any configured toolchain (including disabled ones for explicit manual runs)."""
+        for tc in self.all_toolchains:
             if tc.id == toolchain_id:
                 return tc
-        available = [tc.id for tc in self.toolchains]
+        available = [tc.id for tc in self.all_toolchains]
         raise KeyError(f"Unknown toolchain '{toolchain_id}' for target '{self.id}'. Available: {available}")
 
 
@@ -217,6 +224,7 @@ def load_target_config(path: Path) -> TargetConfig:
             kind=str(tc["kind"]),
             c_compiler=str(tc["c_compiler"]),
             cpp_compiler=str(tc["cpp_compiler"]),
+            enabled=bool(tc.get("enabled", True)),
             use_sccache=bool(tc.get("use_sccache", True)),
             needs_tracewpp=bool(tc.get("needs_tracewpp", False)),
             gallium_va=str(tc.get("gallium_va", "auto_windows")),
@@ -234,7 +242,7 @@ def load_target_config(path: Path) -> TargetConfig:
         upstream=upstream,
         subproject=subproject,
         meson_common_args=tuple(str(a) for a in meson_raw.get("common_args", [])),
-        toolchains=toolchains,
+        all_toolchains=toolchains,
     )
 
 

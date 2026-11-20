@@ -349,7 +349,7 @@ def run_build(
             ),
             subproject=target.subproject,
             meson_common_args=target.meson_common_args,
-            toolchains=target.toolchains,
+            all_toolchains=target.all_toolchains,
         )
 
     with log_path.open("w", encoding="utf-8") as log_fh:

@@ -206,3 +206,31 @@ def test_keepalive_and_runner_provider_switch() -> None:
     assert manual_jobs[0].runner.startswith("blacksmith-")
     assert manual_jobs[1].runner.startswith("blacksmith-")
     assert ":" not in manual_jobs[0].artifact_slug
+
+
+def test_disabled_toolchain_skipped_by_default_but_explicitly_callable() -> None:
+    global_cfg, targets, _, _ = _base_fixtures()
+    target = targets["directx-headers"]
+    default_ids = [tc.id for tc in target.toolchains]
+    assert "clang-cl" not in default_ids
+    assert len(default_ids) == 6
+
+    all_jobs = build_manual_matrix(
+        global_cfg,
+        target,
+        mesa_refs=[("staging/26.3", "aaa")],
+        dep_ref="v1.620.2",
+        dep_sha="bbb",
+        toolchain_ids=None,
+    )
+    assert [j.toolchain for j in all_jobs] == default_ids
+
+    explicit_jobs = build_manual_matrix(
+        global_cfg,
+        target,
+        mesa_refs=[("staging/26.3", "aaa")],
+        dep_ref="v1.620.2",
+        dep_sha="bbb",
+        toolchain_ids=["clang-cl"],
+    )
+    assert [j.toolchain for j in explicit_jobs] == ["clang-cl"]

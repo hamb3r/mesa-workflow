@@ -27,16 +27,16 @@ Awaiting first scheduled or manual canary run.
 - **`preview`** (🟡 warning): Highest preview/prerelease tag (exercises Mesa's `USE_D3D12_PREVIEW_HEADERS=1` path).
 - **`main`** (🟡 warning): Upstream `main` HEAD (filtered by changes to `include/`, `src/`, `meson.build`, with 24h cooldown).
 
-### All 7 Build Variants
-| Variant | OS | Compiler / CRT | D3D12 + Video + DZN | VA-API | Media Foundation |
-| --- | --- | --- | :---: | :---: | :---: |
-| `msvc` | Windows | MSVC `cl.exe` + Windows SDK + `tracewpp` | ✅ | ✅ (auto) | ✅ |
-| `clang-cl` | Windows | LLVM `clang-cl` + MSVC ABI + `tracewpp` | ✅ | ✅ (auto) | ✅ |
-| `msys2-ucrt64` | Windows | MSYS2 MinGW-w64 GCC (UCRT) | ✅ | ✅ (auto) | — (MSVC-only) |
-| `msys2-mingw64` | Windows | MSYS2 MinGW-w64 GCC (MSVCRT) | ✅ | ✅ (auto) | — (MSVC-only) |
-| `msys2-clang64` | Windows | MSYS2 MinGW-w64 Clang (UCRT + lld) | ✅ | ✅ (auto) | — (MSVC-only) |
-| `linux-gcc` | Linux (WSL) | GCC + X11/Wayland | ✅ | ✅ | — (Windows-only) |
-| `linux-clang` | Linux (WSL) | Clang + X11/Wayland | ✅ | ✅ | — (Windows-only) |
+### Build Variants (6 Active + 1 Staged)
+| Variant | OS | Compiler / CRT | D3D12 + Video + DZN | VA-API | Media Foundation | Status |
+| --- | --- | --- | :---: | :---: | :---: | --- |
+| `msvc` | Windows | MSVC `cl.exe` + Windows SDK + `tracewpp` | ✅ | ✅ (auto) | ✅ | Active |
+| `msys2-ucrt64` | Windows | MSYS2 MinGW-w64 GCC (UCRT) | ✅ | ✅ (auto) | — (MSVC-only) | Active |
+| `msys2-mingw64` | Windows | MSYS2 MinGW-w64 GCC (MSVCRT) | ✅ | ✅ (auto) | — (MSVC-only) | Active |
+| `msys2-clang64` | Windows | MSYS2 MinGW-w64 Clang (UCRT + lld) | ✅ | ✅ (auto) | — (MSVC-only) | Active |
+| `linux-gcc` | Linux (WSL) | GCC + X11/Wayland | ✅ | ✅ | — (Windows-only) | Active |
+| `linux-clang` | Linux (WSL) | Clang + X11/Wayland | ✅ | ✅ | — (Windows-only) | Active |
+| `clang-cl` | Windows | LLVM `clang-cl` + MSVC ABI + `tracewpp` | ✅ | ✅ (auto) | ✅ | Disabled (`u_atomic.h` upstream bug) |
 
 ---
 
