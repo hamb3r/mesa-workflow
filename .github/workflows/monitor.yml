@@ -1,0 +1,163 @@
+name: Mesa Forward-Compatibility Canary Monitor
+
+on:
+  schedule:
+    # Lightweight watcher runs every 6 hours (~5 seconds when nothing changed).
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: "Force rebuild of all active branches, channels, and toolchains"
+        required: false
+        default: false
+        type: boolean
+      channels:
+        description: "Comma-separated channel filter (release,preview,main) or 'all'"
+        required: false
+        default: "all"
+        type: string
+      toolchains:
+        description: "Comma-separated toolchain filter or 'all'"
+        required: false
+        default: "all"
+        type: string
+      dry_run:
+        description: "Run watcher/planner only without launching builds or committing state"
+        required: false
+        default: false
+        type: boolean
+      runner_provider:
+        description: "Optional runner provider override (github or blacksmith)"
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: mesa-canary-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  actions: read
+
+jobs:
+  plan:
+    name: Check Upstream & Plan Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      has_work: ${{ steps.check.outputs.has_work }}
+      needs_keepalive: ${{ steps.check.outputs.needs_keepalive }}
+      total_jobs: ${{ steps.check.outputs.total_jobs }}
+      d3d12_has_work: ${{ steps.check.outputs.d3d12_has_work }}
+      d3d12_matrix: ${{ steps.check.outputs.d3d12_matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install PyYAML
+        run: python -m pip install --disable-pip-version-check PyYAML
+
+      - name: Run upstream watcher & diff planner
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_ALL: ${{ inputs.force_all || false }}
+          CHANNELS: ${{ inputs.channels || 'all' }}
+          TOOLCHAINS: ${{ inputs.toolchains || 'all' }}
+          RUNNER_PROVIDER: ${{ inputs.runner_provider || '' }}
+        run: |
+          args=(--snapshot-out _snapshot/snapshot.json --channels "$CHANNELS" --toolchains "$TOOLCHAINS")
+          if [ "$FORCE_ALL" = "true" ]; then
+            args+=(--force-all)
+          fi
+          if [ -n "$RUNNER_PROVIDER" ]; then
+            args+=(--runner-provider "$RUNNER_PROVIDER")
+          fi
+          python scripts/cli.py check "${args[@]}"
+
+      - name: Upload upstream snapshot artifact
+        if: steps.check.outputs.has_work == 'true' || steps.check.outputs.needs_keepalive == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-snapshot
+          path: _snapshot/snapshot.json
+          retention-days: 7
+
+  d3d12:
+    name: DirectX-Headers Canary Builds
+    needs: plan
+    if: needs.plan.outputs.d3d12_has_work == 'true' && inputs.dry_run != true
+    uses: ./.github/workflows/canary-d3d12.yml
+    with:
+      matrix_json: ${{ needs.plan.outputs.d3d12_matrix }}
+
+  report:
+    name: Update Status, Diagnose Backports & Sync Issues
+    needs: [plan, d3d12]
+    if: >-
+      always() &&
+      inputs.dry_run != true &&
+      (needs.plan.outputs.has_work == 'true' || needs.plan.outputs.needs_keepalive == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install PyYAML
+        run: python -m pip install --disable-pip-version-check PyYAML
+
+      - name: Download upstream snapshot
+        uses: actions/download-artifact@v4
+        with:
+          name: canary-snapshot
+          path: _snapshot
+
+      - name: Download all canary build results
+        if: needs.plan.outputs.has_work == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: canary-result-*
+          path: _artifacts
+
+      - name: Merge results, run backport diagnostics, update README & sync GitHub Issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          mkdir -p _artifacts
+          python scripts/cli.py report \
+            --artifacts-dir _artifacts \
+            --snapshot _snapshot/snapshot.json \
+            --repo-slug "$GITHUB_REPOSITORY"
+
+      - name: Commit updated state and README dashboard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/state.json state/status.json README.md
+          if git diff --cached --quiet; then
+            echo "No state or README changes to commit."
+            exit 0
+          fi
+          if [ "${{ needs.plan.outputs.has_work }}" = "true" ]; then
+            msg="chore(canary): update status matrix (${{ needs.plan.outputs.total_jobs }} jobs) [skip ci]"
+          else
+            msg="chore(canary): heartbeat keepalive [skip ci]"
+          fi
+          git commit -m "$msg"
+          git pull --rebase origin main || true
+          git push origin HEAD:main

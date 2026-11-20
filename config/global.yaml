@@ -1,0 +1,40 @@
+# Global configuration for Mesa Forward-Compatibility Canary CI.
+# All upstream reporting stays strictly inside this GitHub repository;
+# never create issues, comments, or MRs on gitlab.freedesktop.org automatically.
+
+mesa:
+  gitlab_api: "https://gitlab.freedesktop.org/api/v4"
+  project_path: "mesa/mesa"
+  git_url: "https://gitlab.freedesktop.org/mesa/mesa.git"
+  release_calendar_url: "https://gitlab.freedesktop.org/mesa/mesa/-/raw/main/docs/release-calendar.csv"
+  branch_policy:
+    include_main: true
+    # Primary source is docs/release-calendar.csv (intersected with existing staging/* branches).
+    # If the calendar is temporarily empty or stale, fall back to the N highest semver staging/* branches.
+    fallback_staging_count: 2
+    max_staging_branches: 3
+
+runners:
+  # Switch to "blacksmith" to migrate builds without touching workflow files.
+  provider: "github"
+  map:
+    github:
+      windows: "windows-latest"
+      linux: "ubuntu-latest"
+    blacksmith:
+      windows: "blacksmith-4vcpu-windows-2025"
+      linux: "blacksmith-4vcpu-ubuntu-2404"
+
+# Prevent GitHub Actions 60-day scheduled workflow auto-disable.
+keepalive_days: 30
+
+# Backport auto-diagnostics (Stage 2 built-in).
+backport:
+  enabled: true
+  max_candidates_per_failure: 5
+  lookback_days: 270
+  test_cherry_pick: true
+
+issues:
+  enabled: true
+  base_label: "mesa-canary"

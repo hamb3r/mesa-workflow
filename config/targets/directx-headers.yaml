@@ -1,0 +1,207 @@
+# Forward-compatibility canary module for microsoft/DirectX-Headers.
+# Covers all three universal upstream streams (stable semver releases, prerelease/preview
+# tags, and main HEAD) across every supported Windows and Linux (WSL) compiler/CRT variant.
+
+id: "directx-headers"
+name: "DirectX-Headers"
+workflow: "canary-d3d12.yml"
+enabled: true
+
+upstream:
+  type: "github"
+  repo: "microsoft/DirectX-Headers"
+  git_url: "https://github.com/microsoft/DirectX-Headers.git"
+  channels:
+    # Universal semver classification — no hardcoded major/minor version prefixes
+    # (works identically for v1.6xx.y, v2.0.0, v3.x.y, etc.).
+    release:
+      kind: "semver_stable"
+      severity: "critical"
+      description: "Latest stable semver release tag"
+    preview:
+      kind: "semver_prerelease"
+      severity: "warning"
+      description: "Latest preview/prerelease tag (exercises USE_D3D12_PREVIEW_HEADERS=1)"
+    main:
+      kind: "branch"
+      branch: "main"
+      severity: "warning"
+      description: "Upstream main branch HEAD"
+      relevant_paths:
+        - "include/"
+        - "src/"
+        - "meson.build"
+      min_interval_hours: 24
+
+subproject:
+  name: "DirectX-Headers"
+  wrap_path: "subprojects/DirectX-Headers.wrap"
+  default_directory: "DirectX-Headers-1.0"
+  meson_dependency_names:
+    - "DirectX-Headers"
+    - "directx-headers"
+
+meson:
+  common_args:
+    - "--buildtype=release"
+    - "-Dgallium-drivers=d3d12"
+    - "-Dgallium-d3d12-graphics=enabled"
+    - "-Dgallium-d3d12-video=enabled"
+    - "-Dvulkan-drivers=microsoft-experimental"
+    - "-Dspirv-to-dxil=true"
+    - "-Dvideo-codecs=all"
+    - "-Dllvm=disabled"
+    - "-Dmicrosoft-clc=disabled"
+    - "-Dgles1=disabled"
+    - "-Dgles2=disabled"
+    - "-Dbuild-tests=false"
+    - "-Dwerror=false"
+    - "--force-fallback-for=DirectX-Headers"
+
+toolchains:
+  # 1. Windows MSVC (cl.exe + Windows SDK + tracewpp + Media Foundation + VA-API)
+  - id: "msvc"
+    label: "Win MSVC"
+    os: "windows"
+    kind: "msvc"
+    c_compiler: "cl"
+    cpp_compiler: "cl"
+    use_sccache: true
+    needs_tracewpp: true
+    gallium_va: "auto_windows"
+    meson_args:
+      - "-Dplatforms=windows"
+      - "-Degl=disabled"
+      - "-Dglx=disabled"
+      - "-Dexpat=disabled"
+      - "-Dzstd=disabled"
+      - "-Dzlib=enabled"
+      - "-Db_vscrt=mt"
+      - "-Dgallium-mediafoundation=enabled"
+      - "-Dmediafoundation-codecs=all"
+      - "-Dmediafoundation-store-dll=false"
+      - "-Dgallium-mediafoundation-test=false"
+
+  # 2. Windows clang-cl (LLVM clang-cl + MSVC ABI / Windows SDK + tracewpp + Media Foundation + VA-API)
+  - id: "clang-cl"
+    label: "Win clang-cl"
+    os: "windows"
+    kind: "clang-cl"
+    c_compiler: "clang-cl"
+    cpp_compiler: "clang-cl"
+    use_sccache: true
+    needs_tracewpp: true
+    gallium_va: "auto_windows"
+    meson_args:
+      - "-Dplatforms=windows"
+      - "-Degl=disabled"
+      - "-Dglx=disabled"
+      - "-Dexpat=disabled"
+      - "-Dzstd=disabled"
+      - "-Dzlib=enabled"
+      - "-Db_vscrt=mt"
+      - "-Dgallium-mediafoundation=enabled"
+      - "-Dmediafoundation-codecs=all"
+      - "-Dmediafoundation-store-dll=false"
+      - "-Dgallium-mediafoundation-test=false"
+
+  # 3. Windows MSYS2 UCRT64 (MinGW-w64 GCC + UCRT)
+  - id: "msys2-ucrt64"
+    label: "MinGW GCC (UCRT64)"
+    os: "windows"
+    kind: "msys2"
+    msys2_sys: "UCRT64"
+    msys2_prefix: "mingw-w64-ucrt-x86_64"
+    c_compiler: "gcc"
+    cpp_compiler: "g++"
+    use_sccache: true
+    needs_tracewpp: false
+    gallium_va: "auto_windows"
+    meson_args:
+      - "-Dplatforms=windows"
+      - "-Degl=disabled"
+      - "-Dglx=disabled"
+      - "-Dexpat=disabled"
+      - "-Dzstd=disabled"
+      - "-Dzlib=enabled"
+      - "-Dgallium-mediafoundation=disabled"
+
+  # 4. Windows MSYS2 MINGW64 (MinGW-w64 GCC + MSVCRT — classic MinGW)
+  - id: "msys2-mingw64"
+    label: "MinGW GCC (MINGW64)"
+    os: "windows"
+    kind: "msys2"
+    msys2_sys: "MINGW64"
+    msys2_prefix: "mingw-w64-x86_64"
+    c_compiler: "gcc"
+    cpp_compiler: "g++"
+    use_sccache: true
+    needs_tracewpp: false
+    gallium_va: "auto_windows"
+    meson_args:
+      - "-Dplatforms=windows"
+      - "-Degl=disabled"
+      - "-Dglx=disabled"
+      - "-Dexpat=disabled"
+      - "-Dzstd=disabled"
+      - "-Dzlib=enabled"
+      - "-Dgallium-mediafoundation=disabled"
+
+  # 5. Windows MSYS2 CLANG64 (MinGW-w64 Clang + UCRT + lld)
+  - id: "msys2-clang64"
+    label: "MinGW Clang (CLANG64)"
+    os: "windows"
+    kind: "msys2"
+    msys2_sys: "CLANG64"
+    msys2_prefix: "mingw-w64-clang-x86_64"
+    c_compiler: "clang"
+    cpp_compiler: "clang++"
+    use_sccache: true
+    needs_tracewpp: false
+    gallium_va: "auto_windows"
+    meson_args:
+      - "-Dplatforms=windows"
+      - "-Degl=disabled"
+      - "-Dglx=disabled"
+      - "-Dexpat=disabled"
+      - "-Dzstd=disabled"
+      - "-Dzlib=enabled"
+      - "-Dgallium-mediafoundation=disabled"
+
+  # 6. Linux GCC (WSL / X11 + Wayland — catches Xlib/WSL stub conflicts like #10803/#10854)
+  - id: "linux-gcc"
+    label: "Linux GCC (WSL)"
+    os: "linux"
+    kind: "linux"
+    c_compiler: "gcc"
+    cpp_compiler: "g++"
+    use_sccache: true
+    needs_tracewpp: false
+    gallium_va: "enabled"
+    meson_args:
+      - "-Dplatforms=x11,wayland"
+      - "-Dglx=dri"
+      - "-Degl=enabled"
+      - "-Dglvnd=disabled"
+      - "-Dgallium-va=enabled"
+      - "-Dallow-fallback-for=libva,libdrm"
+      - "-Dgallium-mediafoundation=disabled"
+
+  # 7. Linux Clang (WSL / X11 + Wayland)
+  - id: "linux-clang"
+    label: "Linux Clang (WSL)"
+    os: "linux"
+    kind: "linux"
+    c_compiler: "clang"
+    cpp_compiler: "clang++"
+    use_sccache: true
+    needs_tracewpp: false
+    gallium_va: "enabled"
+    meson_args:
+      - "-Dplatforms=x11,wayland"
+      - "-Dglx=dri"
+      - "-Degl=enabled"
+      - "-Dglvnd=disabled"
+      - "-Dgallium-va=enabled"
+      - "-Dallow-fallback-for=libva,libdrm"
+      - "-Dgallium-mediafoundation=disabled"
