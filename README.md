@@ -12,7 +12,7 @@ Official Mesa CI pins external SDKs and headers (e.g., `DirectX-Headers`) and te
 
 <!-- STATUS:START -->
 
-_Last updated: **2026-11-24T09:05:29Z**_
+_Last updated: **2026-11-24T22:06:52Z**_
 
 ### Tracked Upstream Versions
 
@@ -26,25 +26,25 @@ _Last updated: **2026-11-24T09:05:29Z**_
 
 | Mesa Branch | HEAD | Win MSVC | MinGW GCC (UCRT64) | MinGW GCC (MINGW64) | MinGW Clang (CLANG64) | Linux GCC (WSL) | Linux Clang (WSL) | Issue |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `main` | `b8108282` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
-| `staging/26.3` | `6cd33b7f` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
-| `staging/26.2` | `6dce7d63` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `main` | `6c103024` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `staging/26.3` | `7073a4c4` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `staging/26.2` | `cc5af43d` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 
 ### DirectX-Headers — `preview` (`untested`) 🟡
 
 | Mesa Branch | HEAD | Win MSVC | MinGW GCC (UCRT64) | MinGW GCC (MINGW64) | MinGW Clang (CLANG64) | Linux GCC (WSL) | Linux Clang (WSL) | Issue |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `main` | `b8108282` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
-| `staging/26.3` | `6cd33b7f` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
-| `staging/26.2` | `6dce7d63` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `main` | `6c103024` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `staging/26.3` | `7073a4c4` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `staging/26.2` | `cc5af43d` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 
 ### DirectX-Headers — `main` (`untested`) 🟡
 
 | Mesa Branch | HEAD | Win MSVC | MinGW GCC (UCRT64) | MinGW GCC (MINGW64) | MinGW Clang (CLANG64) | Linux GCC (WSL) | Linux Clang (WSL) | Issue |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `main` | `b8108282` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
-| `staging/26.3` | `6cd33b7f` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
-| `staging/26.2` | `6dce7d63` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `main` | `6c103024` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `staging/26.3` | `7073a4c4` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `staging/26.2` | `cc5af43d` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 
 <!-- STATUS:END -->
 
