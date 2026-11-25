@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_heartbeat_at": "2026-11-24T22:06:52Z",
+  "last_heartbeat_at": "2026-11-25T07:42:25Z",
   "mesa_branches": {
     "active": [
       "main",
@@ -8,7 +8,7 @@
       "staging/26.2"
     ],
     "heads": {
-      "main": "6c1030248afd7ed6549b3f121195f2a6604ee97a",
+      "main": "334b1c959bdf2f25cee36fafab26a915fcd88b13",
       "staging/26.3": "7073a4c4a682fe8cc0da91672f84d60da6b40d89",
       "staging/26.2": "cc5af43df77034cf97b9b9a6aca35dbcb72bfda7"
     }
