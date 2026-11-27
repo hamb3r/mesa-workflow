@@ -12,7 +12,7 @@ Official Mesa CI pins external SDKs and headers (e.g., `DirectX-Headers`) and te
 
 <!-- STATUS:START -->
 
-_Last updated: **2026-11-26T21:09:44Z**_
+_Last updated: **2026-11-27T07:30:07Z**_
 
 ### Tracked Upstream Versions
 
@@ -26,21 +26,21 @@ _Last updated: **2026-11-26T21:09:44Z**_
 
 | Mesa Branch | HEAD | Win MSVC | MinGW GCC (UCRT64) | MinGW GCC (MINGW64) | MinGW Clang (CLANG64) | Linux GCC (WSL) | Linux Clang (WSL) | Issue |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `main` | `2cf3bd78` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `main` | `5d2dc456` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 | `staging/26.3` | `7073a4c4` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 
 ### DirectX-Headers — `preview` (`untested`) 🟡
 
 | Mesa Branch | HEAD | Win MSVC | MinGW GCC (UCRT64) | MinGW GCC (MINGW64) | MinGW Clang (CLANG64) | Linux GCC (WSL) | Linux Clang (WSL) | Issue |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `main` | `2cf3bd78` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `main` | `5d2dc456` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 | `staging/26.3` | `7073a4c4` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 
 ### DirectX-Headers — `main` (`untested`) 🟡
 
 | Mesa Branch | HEAD | Win MSVC | MinGW GCC (UCRT64) | MinGW GCC (MINGW64) | MinGW Clang (CLANG64) | Linux GCC (WSL) | Linux Clang (WSL) | Issue |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `main` | `2cf3bd78` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
+| `main` | `5d2dc456` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 | `staging/26.3` | `7073a4c4` | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ | — |
 
 <!-- STATUS:END -->
